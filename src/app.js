@@ -88,7 +88,7 @@ function showFeedView() {
   activePostId = null;
   readerView.style.display = "none";
   feedView.style.display = "block";
-  heroBanner.style.display = "flex";
+  if (heroBanner) heroBanner.style.display = "flex";
   progressBar.style.width = "0%";
   window.scrollTo({ top: 0, behavior: "smooth" });
   renderPostsGrid();
@@ -100,7 +100,7 @@ function showReaderView(postId) {
 
   activePostId = postId;
   feedView.style.display = "none";
-  heroBanner.style.display = "none";
+  if (heroBanner) heroBanner.style.display = "none";
   readerView.style.display = "flex";
 
   // Fill content
@@ -342,7 +342,7 @@ postEditorForm.addEventListener("submit", (e) => {
 });
 
 // --- Data Export & Import ---
-exportDataBtn.addEventListener("click", () => {
+if (exportDataBtn) exportDataBtn.addEventListener("click", () => {
   const jsonStr = store.exportData();
   const blob = new Blob([jsonStr], { type: "application/json" });
   const url = URL.createObjectURL(blob);
@@ -353,11 +353,11 @@ exportDataBtn.addEventListener("click", () => {
   URL.revokeObjectURL(url);
 });
 
-importDataBtn.addEventListener("click", () => {
+if (importDataBtn) importDataBtn.addEventListener("click", () => {
   importFileInput.click();
 });
 
-importFileInput.addEventListener("change", (e) => {
+if (importFileInput) importFileInput.addEventListener("change", (e) => {
   const file = e.target.files[0];
   if (!file) return;
 
