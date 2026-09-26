@@ -6,7 +6,7 @@ test("BlogStore initializes with default posts", () => {
   const store = new BlogStore();
   const all = store.getAll();
   assert.equal(all.length, DEFAULT_POSTS.length);
-  assert.equal(all[0].id, "post_design_curve");
+  assert.equal(all[0].id, "post_1");
 });
 
 test("BlogStore creates a new post", () => {
@@ -19,7 +19,7 @@ test("BlogStore creates a new post", () => {
     content: "# 内容标题\n正文内容...",
     tags: ["生活", "摄影"],
     coverEmoji: "📷",
-    author: "小明"
+    author: "Lsi77"
   });
 
   assert.ok(newPost.id);
@@ -38,14 +38,14 @@ test("BlogStore searches and filters by keyword and tag", () => {
   const store = new BlogStore();
   
   // Search keyword
-  const searchResult = store.search("圆角");
+  const searchResult = store.search("www");
   assert.ok(searchResult.length >= 1);
-  assert.ok(searchResult[0].title.includes("圆角"));
+  assert.ok(searchResult[0].title.includes("www"));
 
   // Search by tag
-  const tagResult = store.search("", "生产力");
+  const tagResult = store.search("", "随笔");
   assert.ok(tagResult.length >= 1);
-  assert.ok(tagResult.some(p => p.tags.includes("生产力")));
+  assert.ok(tagResult.some(p => p.tags.includes("随笔")));
 
   // Non-matching query
   const emptyResult = store.search("一段绝对不存在的稀有关键词xyz");

@@ -36,7 +36,6 @@ themeToggleBtn.addEventListener("click", () => {
 // DOM Elements
 const feedView = document.getElementById("feedView");
 const readerView = document.getElementById("readerView");
-const heroBanner = document.getElementById("heroBanner");
 const homeLogo = document.getElementById("homeLogo");
 const postsGrid = document.getElementById("postsGrid");
 const emptyPostsState = document.getElementById("emptyPostsState");
@@ -74,21 +73,16 @@ const postTagsInput = document.getElementById("postTagsInput");
 const postAuthorInput = document.getElementById("postAuthorInput");
 const postExcerptInput = document.getElementById("postExcerptInput");
 const postContentInput = document.getElementById("postContentInput");
+const postAdminPasswordInput = document.getElementById("postAdminPasswordInput");
 const tabWriteBtn = document.getElementById("tabWriteBtn");
 const tabPreviewBtn = document.getElementById("tabPreviewBtn");
 const editorPreviewBox = document.getElementById("editorPreviewBox");
-
-// Data Backup Elements
-const exportDataBtn = document.getElementById("exportDataBtn");
-const importDataBtn = document.getElementById("importDataBtn");
-const importFileInput = document.getElementById("importFileInput");
 
 // --- View Switching ---
 function showFeedView() {
   activePostId = null;
   readerView.style.display = "none";
   feedView.style.display = "block";
-  if (heroBanner) heroBanner.style.display = "flex";
   progressBar.style.width = "0%";
   window.scrollTo({ top: 0, behavior: "smooth" });
   renderPostsGrid();
@@ -100,13 +94,12 @@ function showReaderView(postId) {
 
   activePostId = postId;
   feedView.style.display = "none";
-  if (heroBanner) heroBanner.style.display = "none";
   readerView.style.display = "flex";
 
   // Fill content
   readerTitle.textContent = post.title;
   readerEmoji.textContent = post.coverEmoji || "📝";
-  readerAuthor.textContent = post.author || "我";
+  readerAuthor.textContent = post.author || "Lsi77";
   readerDate.textContent = post.date || "";
   readerLikeCount.textContent = post.likes || 0;
 
@@ -231,19 +224,26 @@ backToFeedBtn.addEventListener("click", () => {
 });
 
 // Reader Actions
-readerLikeBtn.addEventListener("click", () => {
+readerLikeBtn.addEventListener("click", async () => {
   if (!activePostId) return;
-  const newLikes = store.toggleLike(activePostId);
+  const newLikes = await store.likePostOnline(activePostId);
   readerLikeCount.textContent = newLikes;
   readerLikeIcon.textContent = "❤️";
 });
 
-readerDeleteBtn.addEventListener("click", () => {
+readerDeleteBtn.addEventListener("click", async () => {
   if (!activePostId) return;
-  if (confirm("确定要删除这篇文章吗？此操作无法撤销。")) {
-    store.delete(activePostId);
+  const savedPass = store.getSavedPassword();
+  const password = prompt("请输入管理员密码以确认删除该文章：", savedPass || "");
+  if (!password) return;
+
+  try {
+    await store.deletePostOnline(activePostId, password);
+    alert("🗑️ 文章删除成功！");
     renderTagsBar();
     showFeedView();
+  } catch (err) {
+    alert("❌ " + err.message);
   }
 });
 
@@ -257,6 +257,11 @@ function openEditorModal(postId = null) {
   postEditorForm.reset();
   switchEditorTab("write");
 
+  const savedPass = store.getSavedPassword();
+  if (postAdminPasswordInput && savedPass) {
+    postAdminPasswordInput.value = savedPass;
+  }
+
   if (postId) {
     const post = store.getById(postId);
     if (!post) return;
@@ -265,14 +270,14 @@ function openEditorModal(postId = null) {
     postEmojiInput.value = post.coverEmoji || "📝";
     postTitleInput.value = post.title;
     postTagsInput.value = (post.tags || []).join(", ");
-    postAuthorInput.value = post.author || "我";
+    postAuthorInput.value = post.author || "Lsi77";
     postExcerptInput.value = post.excerpt || "";
     postContentInput.value = post.content || "";
   } else {
     modalTitleText.textContent = "撰写新文章";
     editPostId.value = "";
     postEmojiInput.value = "📝";
-    postAuthorInput.value = "我";
+    postAuthorInput.value = "Lsi77";
   }
 
   editorModal.style.display = "flex";
@@ -312,71 +317,55 @@ function switchEditorTab(tab) {
 tabWriteBtn.addEventListener("click", () => switchEditorTab("write"));
 tabPreviewBtn.addEventListener("click", () => switchEditorTab("preview"));
 
-postEditorForm.addEventListener("submit", (e) => {
+postEditorForm.addEventListener("submit", async (e) => {
   e.preventDefault();
   const id = editPostId.value;
   const title = postTitleInput.value.trim();
   const coverEmoji = postEmojiInput.value.trim() || "📝";
-  const author = postAuthorInput.value.trim() || "我";
+  const author = postAuthorInput.value.trim() || "Lsi77";
   const excerpt = postExcerptInput.value.trim();
   const content = postContentInput.value;
+  const password = postAdminPasswordInput ? postAdminPasswordInput.value.trim() : "";
   const rawTags = postTagsInput.value.split(/[,，]/).map(t => t.trim()).filter(Boolean);
   const tags = rawTags.length > 0 ? rawTags : ["随笔"];
 
   if (!title) return;
 
-  if (id) {
-    store.update(id, { title, coverEmoji, author, excerpt, content, tags });
-  } else {
-    store.create({ title, coverEmoji, author, excerpt, content, tags });
-  }
+  const submitBtn = postEditorForm.querySelector("button[type='submit']");
+  const origBtnText = submitBtn.textContent;
+  submitBtn.disabled = true;
+  submitBtn.textContent = "正在发布...";
 
-  closeEditorModal();
-  renderTagsBar();
+  try {
+    const postData = { id: id || undefined, title, coverEmoji, author, excerpt, content, tags };
+    const saved = await store.savePostOnline(postData, password);
 
-  if (activePostId && activePostId === id) {
-    showReaderView(id);
-  } else {
-    showFeedView();
-  }
-});
+    alert("🎉 发布成功！全网访客已实时可见。");
+    closeEditorModal();
+    renderTagsBar();
 
-// --- Data Export & Import ---
-if (exportDataBtn) exportDataBtn.addEventListener("click", () => {
-  const jsonStr = store.exportData();
-  const blob = new Blob([jsonStr], { type: "application/json" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `aura_blog_backup_${new Date().toISOString().split("T")[0]}.json`;
-  a.click();
-  URL.revokeObjectURL(url);
-});
-
-if (importDataBtn) importDataBtn.addEventListener("click", () => {
-  importFileInput.click();
-});
-
-if (importFileInput) importFileInput.addEventListener("change", (e) => {
-  const file = e.target.files[0];
-  if (!file) return;
-
-  const reader = new FileReader();
-  reader.onload = (event) => {
-    const ok = store.importData(event.target.result);
-    if (ok) {
-      alert("🎉 数据导入成功！");
-      renderTagsBar();
-      showFeedView();
+    if (saved && saved.id) {
+      showReaderView(saved.id);
     } else {
-      alert("❌ 导入失败，请检查是否为有效的备份 JSON 文件。");
+      showFeedView();
     }
-    importFileInput.value = "";
-  };
-  reader.readAsText(file);
+  } catch (err) {
+    alert("❌ " + err.message);
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.textContent = origBtnText;
+  }
 });
 
-// --- Initialization ---
+// --- Boot & Async Cloud Sync ---
 initTheme();
 renderTagsBar();
 renderPostsGrid();
+
+// Asynchronously fetch latest posts from Cloudflare D1
+store.syncFromCloud().then(({ success }) => {
+  if (success) {
+    renderTagsBar();
+    renderPostsGrid();
+  }
+});
