@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Aura · 简约圆角本地博客</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="reading-progress-bar" id="progressBar"></div>
+
+  <!-- Main App Shell -->
+  <div class="app-layout">
+    
+    <!-- Floating Rounded Header -->
+    <header class="floating-navbar">
+      <div class="nav-left">
+        <a href="#" class="brand-logo" id="homeLogo">
+          <span class="logo-emoji">🌿</span>
+          <span class="brand-name">Aura</span>
+          <span class="brand-tag">Blog</span>
+        </a>
+      </div>
+
+      <div class="nav-center">
+        <div class="search-pill">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="searchInput" placeholder="搜索文章标题、内容或标签..." autocomplete="off" />
+          <button id="clearSearchBtn" class="clear-search-btn" style="display:none;">✕</button>
+        </div>
+      </div>
+
+      <div class="nav-right">
+        <button id="themeToggleBtn" class="pill-btn pill-btn-ghost" title="切换暗黑/明亮模式">
+          <span class="theme-icon">🌙</span>
+        </button>
+        <button id="newPostBtn" class="pill-btn pill-btn-primary">
+          <span class="btn-icon">✍️</span>
+          <span>写文章</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Hero / Welcome Banner -->
+    <section class="hero-card" id="heroBanner">
+      <div class="hero-content">
+        <span class="hero-pill">✨ Local-First & Minimal</span>
+        <h1 class="hero-title">温润如玉，静心记录</h1>
+        <p class="hero-subtitle">去除视觉杂质的大圆角现代美学 · 本地离线持久存储 · 原生 Markdown 沉浸排版</p>
+      </div>
+      <div class="hero-graphic">
+        <div class="bubble-art bubble-1"></div>
+        <div class="bubble-art bubble-2"></div>
+        <div class="bubble-art bubble-3"></div>
+      </div>
+    </section>
+
+    <!-- Tag Filter Bar -->
+    <nav class="tags-scroller" id="tagFilterBar">
+      <button class="tag-pill active" data-tag="">全部文章</button>
+      <!-- Dynamically filled -->
+    </nav>
+
+    <!-- Main View Switcher: Feed View or Article View -->
+    <main class="content-container">
+      
+      <!-- VIEW 1: Article Cards Stream -->
+      <section id="feedView" class="feed-view">
+        <div id="postsGrid" class="posts-grid">
+          <!-- Dynamically populated cards -->
+        </div>
+
+        <div id="emptyPostsState" class="empty-rounded-card" style="display: none;">
+          <div class="empty-icon">🍃</div>
+          <h3>没有找到相关文章</h3>
+          <p>尝试更换关键词或标签，或者点击上方“写文章”创建一篇新随笔。</p>
+        </div>
+      </section>
+
+      <!-- VIEW 2: Immersive Reader View -->
+      <article id="readerView" class="reader-view" style="display: none;">
+        <div class="reader-toolbar">
+          <button id="backToFeedBtn" class="pill-btn pill-btn-secondary">
+            <span>← 返回文章列表</span>
+          </button>
+          <div class="reader-actions">
+            <button id="readerLikeBtn" class="pill-btn pill-btn-outline">
+              <span id="readerLikeIcon">🤍</span>
+              <span id="readerLikeCount">0</span>
+            </button>
+            <button id="readerEditBtn" class="pill-btn pill-btn-secondary">编辑</button>
+            <button id="readerDeleteBtn" class="pill-btn pill-btn-danger">删除</button>
+          </div>
+        </div>
+
+        <div class="reader-paper-card">
+          <header class="reader-header">
+            <div class="reader-emoji-badge" id="readerEmoji">📝</div>
+            <div class="reader-meta-chips" id="readerTags"></div>
+            <h1 class="reader-title" id="readerTitle">文章标题</h1>
+            <div class="reader-byline">
+              <span class="byline-author" id="readerAuthor">作者</span>
+              <span class="byline-dot">·</span>
+              <span class="byline-date" id="readerDate">2026-09-26</span>
+              <span class="byline-dot">·</span>
+              <span class="byline-pill" id="readerReadTime">⏱️ 3 分钟阅读</span>
+            </div>
+          </header>
+
+          <div class="reader-body markdown-body" id="readerBody">
+            <!-- Rendered Markdown HTML -->
+          </div>
+        </div>
+      </article>
+    </main>
+
+    <!-- Footer with Stats & Data Backup -->
+    <footer class="rounded-footer">
+      <div class="footer-left">
+        <p><strong>Aura Blog</strong> · 极简圆角本地博客系统</p>
+        <p class="footer-sub">数据保存在浏览器本地存储 (Local-First)，私密安全无网络依赖</p>
+      </div>
+      <div class="footer-right">
+        <button id="exportDataBtn" class="pill-btn pill-btn-ghost-sm">📦 导出备份 (JSON)</button>
+        <button id="importDataBtn" class="pill-btn pill-btn-ghost-sm">📥 导入数据</button>
+        <input type="file" id="importFileInput" accept=".json" style="display:none;" />
+      </div>
+    </footer>
+  </div>
+
+  <!-- MODAL: Editor Dialog for New / Edit Post -->
+  <div id="editorModal" class="modal-backdrop" style="display: none;">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2 id="modalTitleText">撰写新文章</h2>
+        <button id="closeModalBtn" class="icon-close-btn">✕</button>
+      </div>
+
+      <form id="postEditorForm" class="editor-form">
+        <input type="hidden" id="editPostId" />
+
+        <div class="form-row form-row-top">
+          <div class="form-group emoji-picker-group">
+            <label for="postEmojiInput">封面图标</label>
+            <input type="text" id="postEmojiInput" class="rounded-input emoji-input" value="📝" maxlength="2" />
+          </div>
+          <div class="form-group flex-1">
+            <label for="postTitleInput">文章标题 *</label>
+            <input type="text" id="postTitleInput" class="rounded-input" placeholder="输入温暖有力量的标题..." required />
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group flex-1">
+            <label for="postTagsInput">分类标签 (用逗号隔开)</label>
+            <input type="text" id="postTagsInput" class="rounded-input" placeholder="例如: 思考, 设计, 生活" />
+          </div>
+          <div class="form-group" style="width: 140px;">
+            <label for="postAuthorInput">署名</label>
+            <input type="text" id="postAuthorInput" class="rounded-input" value="我" />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="postExcerptInput">文章摘要 (可选，留空将自动截取)</label>
+          <input type="text" id="postExcerptInput" class="rounded-input" placeholder="简短的一两句概述..." />
+        </div>
+
+        <div class="form-group editor-body-group">
+          <div class="editor-tabs">
+            <button type="button" class="tab-btn active" id="tabWriteBtn">编辑正文 (Markdown)</button>
+            <button type="button" class="tab-btn" id="tabPreviewBtn">实时预览</button>
+          </div>
+          
+          <div class="editor-field-wrap">
+            <textarea id="postContentInput" class="rounded-textarea" placeholder="支持 Markdown：
+# 标题
+> 引用金句
+- 列表项
+```js
+// 代码块
+```
+**粗体** 与 *斜体*..." rows="12"></textarea>
+            
+            <div id="editorPreviewBox" class="editor-preview-box markdown-body" style="display:none;"></div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" id="cancelModalBtn" class="pill-btn pill-btn-ghost">取消</button>
+          <button type="submit" class="pill-btn pill-btn-primary">保存并发布</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="src/bundle.js"></script>
+</body>
+</html>
