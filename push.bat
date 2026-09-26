@@ -1,39 +1,38 @@
 @echo off
-chcp 65001 >nul
-title Aura 博客一键发布工具
+title Aura Blog Auto Publisher
 echo ======================================================
-echo  Aura 博客一键自动同步与发布工具
+echo  Aura Blog Auto Sync and Publish Tool
 echo ======================================================
 echo.
 
-echo [1/3] 正在检查 Git 目录信任...
+echo [1/3] Setting Git safe directory...
 git config --global --add safe.directory "%CD%"
 git config --global --add safe.directory "C:/Users/77/Documents/Codex/2026-09-26/gou/outputs/minimal-blog"
 
-echo [2/3] 正在自动打包所有新文章与修改...
+echo [2/3] Staging and committing local changes...
 git add .
 git commit -m "update blog: %date% %time%" >nul 2>&1
 
-echo [3/3] 正在推送到 GitHub 并触发 Cloudflare 自动上线...
+echo [3/3] Pushing to GitHub...
 git push origin main
-
 if %ERRORLEVEL% NEQ 0 (
     echo.
-    echo 正在对齐 GitHub 与本地的历史版本 (首次同步)...
+    echo First-time sync detected. Aligning remote with local...
     git push origin main --force
 )
 
 if %ERRORLEVEL% EQU 0 (
     echo.
     echo ======================================================
-    echo  发布成功！
-    echo Cloudflare 已收到更新，约 20 秒后线上即可看到最新内容！
-    echo 你的网站: https://wlog-6cj.pages.dev
+    echo  SUCCESS: Blog published successfully!
+    echo  Cloudflare will automatically deploy your site in ~20s.
+    echo  Your site: https://wlog-6cj.pages.dev
     echo ======================================================
 ) else (
     echo.
     echo ======================================================
-    echo  推送遇到问题，请检查网络连接。
+    echo  FAILED: Push encountered an error.
+    echo  Please check your network connection.
     echo ======================================================
 )
 echo.
