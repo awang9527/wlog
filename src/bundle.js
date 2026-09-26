@@ -18,6 +18,14 @@ function escapeHtml(str) {
  * @param {string} md 
  * @returns {string}
  */
+function sanitizeUrl(url) {
+  const u = (url || "").trim().toLowerCase();
+  if (u.startsWith("javascript:") || u.startsWith("vbscript:") || u.startsWith("data:text")) {
+    return "#";
+  }
+  return url;
+}
+
 function parseMarkdown(md) {
   if (!md || typeof md !== "string") return "";
 
@@ -154,10 +162,10 @@ function renderInline(text) {
   let s = escapeHtml(text);
 
   // Images: ![alt](url)
-  s = s.replace(/!\[([^\]]*)\]\(([^\)]+)\)/g, `<img src="$2" alt="$1" class="post-inline-img" />`);
+  s = s.replace(/!\[([^\]]*)\]\(([^\)]+)\)/g, (match, alt, url) => `<img src="${sanitizeUrl(url)}" alt="${alt}" class="post-inline-img" />`);
 
   // Links: [text](url)
-  s = s.replace(/\[([^\]]+)\]\(([^\)]+)\)/g, `<a href="$2" target="_blank" rel="noopener" class="post-link">$1</a>`);
+  s = s.replace(/\[([^\]]+)\]\(([^\)]+)\)/g, (match, text, url) => `<a href="${sanitizeUrl(url)}" target="_blank" rel="noopener" class="post-link">${text}</a>`);
 
   // Inline Code: `code`
   s = s.replace(/`([^`]+)`/g, `<code class="inline-code">$1</code>`);
